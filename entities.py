@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from obserable import ObserableEntity
 
 
 ENTITY_TYPES = [
@@ -33,7 +34,7 @@ class CRAWLING_STATUSES:
     UNCRAWLABLE = 16
 
 
-class CrawlableEntity:
+class CrawlableEntity(ObserableEntity):
     link: str
     name: str
     crawling_status: int # from CRAWLING_STATUSES
@@ -48,6 +49,9 @@ class CrawlableEntity:
         self.is_blacklisted = is_blacklisted
         self.is_deleted = is_deleted
         self.last_crawled = last_crawled
+
+    def __eq__(self, __o: object) -> bool:
+        return self.is_deleted == __o.is_deleted and self.is_blacklisted == __o.is_blacklisted and self.crawling_status == __o.crawling_status
 
 
 class Event(CrawlableEntity):
@@ -76,7 +80,7 @@ class Webinar(CrawlableEntity):
         self.language = language
 
 
-class Company(CrawlableEntity):
+class Company(CrawlableEntity, ObserableEntity):
     employees_min: int
     employees_max: int
 
@@ -85,6 +89,8 @@ class Company(CrawlableEntity):
         self.employees_min = employees_min
         self.employees_max = employees_max
 
+    def __eq__(self, __o: object) -> bool:
+        return self.is_deleted == __o.is_deleted and self.is_blacklisted == __o.is_blacklisted
 
 class ContentItem(CrawlableEntity):
     snippet: Optional[str]
@@ -95,8 +101,11 @@ class ContentItem(CrawlableEntity):
         self.company = company
         self.snippet = snippet
 
+    def notification_subject(self):
+        return self.company
 
-class CompanyForEvent:
+
+class CompanyForEvent(ObserableEntity):
     event: Event
     company: Company
     is_deleted: bool
@@ -108,6 +117,8 @@ class CompanyForEvent:
         self.is_blacklisted = is_blacklisted
         self.is_deleted = is_deleted
 
+    def notification_subject(self):
+        return self.event
 
 class CompanyForWebinar:
     webinar: Webinar
@@ -121,6 +132,8 @@ class CompanyForWebinar:
         self.is_blacklisted = is_blacklisted
         self.is_deleted = is_deleted
 
+    def notification_subject(self):
+        return self.webinar
 
 class CompanyCompetitor:
     company: Company
@@ -131,3 +144,6 @@ class CompanyCompetitor:
         self.company = company
         self.competitor = competitor
         self.is_deleted = is_deleted
+
+    def notification_subject(self):
+        return self.company
